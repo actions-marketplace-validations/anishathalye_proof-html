@@ -1,21 +1,28 @@
-FROM alpine:3.22 AS base
+FROM alpine:3.23 AS base
 
-RUN apk --no-cache add openjdk21
+RUN apk --no-cache add openjdk25
 
 FROM base AS build-vnu
 
-RUN apk add git python3
+RUN apk add git python3 apache-ant maven
 
-RUN git clone -n https://github.com/validator/validator.git \
-    && cd validator \
-    && git checkout 84a1b28ff4cc28b7e9a31784688dbee6366b3467 \
-    && JAVA_HOME=/usr/lib/jvm/java-21-openjdk python checker.py update-shallow dldeps build jar
+RUN git clone -n https://github.com/validator/validator.git
+
+RUN cd validator \
+    && git fetch \
+    && git checkout 23f090a11bab8d0d4e698f1ffc197a4fe226a9cd
+
+RUN cd validator \
+    && JAVA_HOME=/usr/lib/jvm/java-25-openjdk python checker.py dldeps
+
+RUN cd validator \
+    && JAVA_HOME=/usr/lib/jvm/java-25-openjdk python checker.py --offline build jar
 
 FROM base
 
 RUN apk --no-cache add build-base linux-headers ruby-dev
 RUN apk --no-cache add curl
-RUN gem install html-proofer -v 5.0.10
+RUN gem install html-proofer -v 5.2.0
 
 RUN apk --no-cache add bash
 
